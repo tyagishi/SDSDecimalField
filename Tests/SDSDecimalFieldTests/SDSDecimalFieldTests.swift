@@ -2,14 +2,11 @@ import XCTest
 @testable import SDSDecimalField
 
 final class SDSDecimalFieldTests: XCTestCase {
-    func testExample() {
-        // This is an example of a functional test case.
-        // Use XCTAssert and related functions to verify your tests produce the correct
-        // results.
-        XCTAssertEqual(SDSDecimalField().text, "Hello, World!")
+    func test_emptyTest_NA_NA() {
+        XCTFail("no test")
     }
 
     static var allTests = [
-        ("testExample", testExample),
+        ("testExample", test_emptyTest_NA_NA),
     ]
 }
