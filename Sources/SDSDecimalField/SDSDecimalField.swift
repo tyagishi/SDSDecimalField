@@ -10,11 +10,8 @@ import MathParser
 
 public struct SDSDecimalField: View {
     @Binding var value: Decimal
+    // formatter for display
     let formatter: NumberFormatter
-    @State private var editingText: String = ""
-    @State private var underEditing = false
-    @State private var error = false
-    @State private var check:String = "a"
     
     static public var defaultFormatter: NumberFormatter {
         let formatter = NumberFormatter()
@@ -29,41 +26,43 @@ public struct SDSDecimalField: View {
     }
     
     public var body: some View {
-        HStack {
-            if underEditing {
-                Button(action: { self.editingText = "" },
-                       label: { Image(systemName: "xmark.circle").foregroundColor(.secondary)})
-            }
-            TextField("input here...", text: $editingText, onEditingChanged:{ bEditing in
-                underEditing = bEditing
-            }, onCommit: {
-                if let valueCheck = calcDecimalFromString(editingText) {
-                    editingText = formattedString(valueCheck) ?? "0"
-                    value = valueCheck
-                    underEditing = false
-                } else {
-                    editingText = formattedString(value) ?? "0"
-                }
-            })
+        TextField("input here...", value: $value, formatter: CurrencyFormatter(formatter) )
             .multilineTextAlignment(.trailing)
-            .overlay(
-                Text(formattedString(value) ?? "0")
-                .frame(maxWidth:.infinity, alignment: .leading)
-                .foregroundColor(.secondary)
-                .font(.footnote)
-                .padding(.leading, 5)
-                .opacity(underEditing ? 1.0 : 0.0)
-            )
-        }
-        .onAppear {
-            editingText = formattedString(value) ?? ""
-        }
+    }
+}
+
+// Formatter for convert
+class CurrencyFormatter: Formatter {
+    static let digits = "0123456789+-*/()" + NumberFormatter().currencyDecimalSeparator
+
+    static var displayFormatter:NumberFormatter {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .currency
+        formatter.generatesDecimalNumbers = true
+        return formatter
+    }
+    let displayFormatter: NumberFormatter
+    
+    init(_ displayFormatter: NumberFormatter = CurrencyFormatter.displayFormatter) {
+        self.displayFormatter = displayFormatter
+        super.init()
     }
     
-    func formattedString(_ value: Decimal) -> String?{
-        self.formatter.string(from: value as NSDecimalNumber) ?? "0"
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
     }
     
+    override func string(for obj: Any?) -> String? {
+        guard let decimal = obj as? Decimal else { return nil }                  // Decimal が渡されなかったら処理しない
+        return displayFormatter.string(from: decimal as NSDecimalNumber)
+    }
+    
+    override func getObjectValue(_ obj: AutoreleasingUnsafeMutablePointer<AnyObject?>?, for string: String, errorDescription error: AutoreleasingUnsafeMutablePointer<NSString?>?) -> Bool {
+        let digitString = string.filter{CurrencyFormatter.digits.contains($0)}          // 渡された文字列から数字以外を外す
+        guard let decimal = calcDecimalFromString(digitString) else { return false }
+        obj?.pointee = decimal as AnyObject
+        return true                                                   // 処理できたので、true を返す
+    }
 }
 
 func calcDecimalFromString(_ str: String) -> Decimal? {
